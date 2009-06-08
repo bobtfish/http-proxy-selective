@@ -1,0 +1,12 @@
+Possible enhancements not covered in the Venda contract:
+
+ . Use File::HomeDir so that you can configure paths relative to your user's 
+   home directory.
+ . Enable config paths relative to current directory.
+ . Have a standard 'dot file' location to store config, so that regular users
+   can just invoke selective_proxy
+ . Have 'if you can't find it locally, serve it from remote' type of path/
+   mode of operation (as opposed to the current 404 behavior). Could be useful 
+   sometimes.
+ . Make Module::Install::PAR be able to generate make targets which make 
+   executables for scripts.

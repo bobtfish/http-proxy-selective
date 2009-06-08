@@ -1,0 +1,174 @@
+#!/usr/bin/env perl
+use strict;
+use warnings;
+use HTTP::Proxy;
+use Config::Tiny;
+use HTTP::Proxy::Selective;
+
+# For PAR
+my $sep = '/';
+if ($^O =~ /WIN32/i) {
+    $sep = "\\";
+}
+require join($sep, qw/HTTP Proxy Engine ScoreBoard.pm/);
+require join($sep, qw/HTTP Proxy Engine NoFork.pm/);
+
+our %http_proxy_defaults = (
+    port                    => 3128,
+    max_clients             => 10,
+    max_requests_per_child  => 100,
+    min_spare_servers       => 1,
+    max_spare_servers       => 5,
+    keep_alive              => 1,
+    max_keep_alive_requests => 50,
+    keep_alive_timeout      => 60,
+    engine                  => 'ScoreBoard',
+);
+
+sub _generate_proxy_config {
+    my %in_params = @_;
+    my %params;
+    foreach my $k (keys %http_proxy_defaults) {
+        $params{$k} = exists $in_params{$k} ? $in_params{$k} : $http_proxy_defaults{$k};
+    }
+    return %params;
+}
+
+my $_help = q{No config file passed on command line.
+    
+Please create a file in a text editor which looks like this:
+# Note that more options are available, please see example_config.ini in the distribution for usage.
+port = 3128
+
+[search.cpan.org]
+/s/=/tmp/css
+/stuff/=/tmp/stuff
+
+[www.google.com]
+/js/=/tmp/js
+/some/file.jpg=/tmp/somefile.jpg
+
+and save it in your editor. Then re-run selective_proxy, appending the configuration file name.
+};
+
+sub main {
+    my $conf_file = shift(@ARGV);
+    die($_help) unless ($conf_file);
+    die("Config file passed on command line ($conf_file) could not be read.\n") unless (-r $conf_file);
+
+    my %config = %{ Config::Tiny->read( $conf_file ) };
+
+    my $root_config = delete $config{_};
+
+    my $proxy = HTTP::Proxy->new( 
+        _generate_proxy_config( %{$root_config} ),
+        max_connections => 0, # Not lettng the users stamp on this..
+    );
+    $proxy->push_filter( 
+        method => 'GET, HEAD',
+        request => HTTP::Proxy::Selective->new(\%config)
+    );
+    warn("Starting proxy at " . $proxy->url . "\n");
+    $proxy->start;
+}
+
+main() unless caller();
+main() if $ENV{PAR_0};
+
+1;
+
+__END__
+
+=head1 NAME
+
+selective_proxy - Simple HTTP Proxy which can be configured to serve some paths from locations on local disk.
+    
+=head1 SYNOPSIS
+
+    # Install, standard (MacOS/Linux).
+    perl Makefile.PL
+    make
+    sudo make install
+    
+    # Install, .exe version (can be copied to other systems without perl). Needs the PAR::Dist and PAR::Packer modules from CPAN.
+    # Yes, this is hacky, there should be Makefile targets to do this. I'm speaking to the Module::Install author about it,
+    # so hopefully this will be less fugly in the next release :)
+    perl Makefile.PL
+    make par
+    PAR_PROGNAME=selective_proxy pp HTTP-Proxy-Selective-0.1-darwin-thread-multi-2level-5.8.6.par -o selective_proxy
+    sudo cp selective_proxy /usr/local/bin/
+    
+    # Run (Installed)
+    selective_proxy example_config.ini
+    
+    # Run (without installing)
+    perl Makefile.PL
+    make
+    perl -Iblib/lib script/selective_proxy example_config.ini
+    
+=head1 DESCRIPTION
+
+C<selective_proxy> acts as a filtering web proxy. You pass it a configuration file when started, which contains a list of sites
+and paths. Any GET or HEAD HTTP requests which match one of the sites and paths configured is served from local disk by the proxy.
+
+This allows you to try out new CSS / Javascript / Images for a website, without having any access to the site (or code it is running),
+and so this tool can be used as a multi-platform and multi-browser CSS developer tool for web authors.
+
+=head1 EXAMPLE CONFIGURATION
+
+    # Note that more options are available, please see example_config.ini in the distribution for usage.
+    port = 3128
+
+    [search.cpan.org]
+    /s/=/tmp/css
+    /stuff/=/tmp/stuff
+
+    [www.google.com]
+    /js/=/tmp/js
+    /some/file.jpg=/tmp/somefile.jpg
+
+=head2 Notes
+
+When you want to map an entire directory (as opposed to a specific 
+file), then use of the trailing slash (as shown in the examples above) is 
+highly recommended, otherwise you can and will confuse yourself with 
+unintended side effects.
+
+=head1 SEE ALSO
+
+=over
+
+=item L<HTTP::Proxy::Selective> -  Library module used by and shipped with this script.
+
+=item L<HTTP::Proxy> - Provides the basis for this software.
+
+=item L<Catalyst::Engine::HTTP> - Many parts of the HTTP server were ripped out of this module. 
+
+=back
+
+=head1 AUTHOR
+
+Tomas Doran, <bobtfish@bobtfish.net>
+
+=head1 CREDITS
+
+This software is based upon a number of other open source projects, and builds on software originally implemented by the following people.
+
+=over
+
+=item Philippe (BooK) Bruhat - L<HTTP::Proxy>, the basis for this module.
+
+=item Sebastian Riedel, Andy Grubman, Dan Kubb, Sascha Kiefer - L<Catalyst::Engine::HTTP>, inspiration as a pure perl web server.
+
+=item Jesse Vincent - L<HTTP::Server::Simple>, which L<Catalyst::Engine::HTTP> stole a lot of code from..
+
+=back
+
+=head1 COPYRIGHT
+
+Copyright 2008 Tomas Doran. All rights reserved.
+
+=head1 LICENSE
+
+This software is licensed to Venda, and may be distributed to third parties, but is not for public redistribution.
+

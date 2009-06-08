@@ -1,0 +1,15 @@
+0.3 July 2008
+  - Change mime type detection to just use the file extension of the file 
+    being served from local disk (rather than magic). Windows doesn't have
+    a magic file...
+
+0.2 July 2008
+  - Fixed t/03_pod_coverage.t - I'd ripped this off from another one of my modules, and it still had references to that module,
+    and therefore didn't work without this module installed.
+  - Added relevant requires, so that the HTTP::Proxy::Engine classes get
+    bundled with the script.
+  - Change packing instructions so that we don't pack just the .par
+
+0.1 July 2008
+  - Initial version
+  
