@@ -44,7 +44,6 @@ sub _generate_matches_from_config {
 
 sub filter {
     my ( $self, $headers, $message ) = @_;
-    warn("In filter");
     my $uri = $message->uri;
     return unless $self->{_myfilter}{$uri->host};
     my $path = $uri->path;
