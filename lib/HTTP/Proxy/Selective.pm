@@ -11,7 +11,7 @@ use File::stat;
 
 use HTTP::Response;
 
-our $VERSION   = '0.3';
+our $VERSION   = '0.001';
 
 sub new {
     my ($class, $filter) = @_;
@@ -619,6 +619,13 @@ Method which performs the filtering, called by L<HTTP::Proxy>.
 =item L<Catalyst::Engine::HTTP> - Many parts of the HTTP server were ripped out of this module. 
 
 =back
+
+=head1 BINARY DISTRIBUTION
+
+A binary release of the latest version of this software for Windows may be
+found at:
+
+  http://www.venda.com/page/developertools
 
 =head1 AUTHOR
 
