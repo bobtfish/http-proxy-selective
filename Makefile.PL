@@ -15,12 +15,12 @@ build_requires 'Test::MockObject';
 auto_install();
 
 install_script 'script/selective_proxy';
-build_exe('selective_proxy');
+#build_exe('selective_proxy');
 
 # I don't actually use the remote PAR support,
 # but adding par_base magically turns on *all* PAR
 # support, and so make par works.
-par_base        'BOBTFISH';
+#par_base        'BOBTFISH';
 
 WriteAll();
 
