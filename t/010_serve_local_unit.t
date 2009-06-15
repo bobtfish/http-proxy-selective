@@ -7,6 +7,8 @@ use Test::MockObject;
 BEGIN { use_ok('HTTP::Proxy::Selective') or BAIL_OUT() };
 
 my $mock_proxy = Test::MockObject->new;
+my $mime_type;
+$mock_proxy->mock('_mimetype' => sub { return $mime_type });
 my $mock_headers = Test::MockObject->new;
 my %headers;
 $mock_headers->mock('header' => sub {
@@ -18,10 +20,9 @@ my $fake_stat = Test::MockObject->new;
 my ($mtime, $size);
 $fake_stat->mock('mtime' => sub { $mtime; });
 $fake_stat->mock('size' => sub { $size; });
-my ($stat_fn, $mime_type, $file_content);
+my ($stat_fn, $file_content);
 {   no warnings 'redefine';
     *HTTP::Proxy::Selective::stat = sub ($) { $stat_fn = shift; return $fake_stat };
-    *HTTP::Proxy::Selective::mimetype = sub { return $mime_type };
     *HTTP::Proxy::Selective::read_file = sub { return 'file contents' };
 }
 my $file_exists = 0;

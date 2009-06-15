@@ -11,16 +11,27 @@ use File::stat;
 
 use HTTP::Response;
 
-our $VERSION   = '0.3';
+our $VERSION   = '0.7';
 
 sub new {
-    my ($class, $filter) = @_;
+    my ($class, $filter, $debug) = @_;
     my $self = $class->SUPER::new();
     my $overrides = delete $filter->{mime_overrides};
     $overrides ||= {};
     my %mime_types = (_initial_mime_types(), %$overrides);
     $self->{_mime_types} = \%mime_types;
     $self->{_myfilter} = _generate_matches_from_config(%$filter);
+    if ($debug) {
+        $self->{_debug} = 1;
+        warn("Debugging mode ON\nPaths this proxy will divert:\n");
+        foreach my $host (keys %{ $self->{_myfilter} }) {
+            foreach my $array ( @{ $self->{_myfilter}{$host} } ) {
+                warn($host . $array->[0] . "\n");
+            }
+        }
+        warn("\n");
+    }
+    
     return $self;
 }
 
@@ -44,20 +55,29 @@ sub _generate_matches_from_config {
 
 sub filter {
     my ( $self, $headers, $message ) = @_;
-    warn("In filter");
     my $uri = $message->uri;
-    return unless $self->{_myfilter}{$uri->host};
+    unless ($self->{_myfilter}{$uri->host}) {
+        return;
+        warn("Did not match host " . $uri->host . " from config.\n") if $self->{_debug};
+    }
     my $path = $uri->path;
+    warn("Trying to match request path: $path\n") if $self->{_debug};
     foreach my $myfilter (@{ $self->{_myfilter}{$uri->host} }) {
         my ($match_path, $on_disk) = @$myfilter;
         if ($self->_filter_applies($myfilter, $path)) {
+            warn("Matched $match_path with path $path\n");
             my $path_remainder = substr($path, length($match_path));
             my $fn = Path::Class::File->new($on_disk, $path_remainder)->stringify;
+            $fn =~ s/[\\\/]$//;
             my $res = $self->_serve_local($headers, $fn);
             $self->proxy->response($res);
             return;
         }
+        else {
+            warn("Did not match $match_path with path $path\n") if $self->{_debug};
+        }
     }
+    warn("No paths matched - sending request to original server.\n") if $self->{_debug};
     return;
 }
 
@@ -70,6 +90,7 @@ sub _serve_local {
     my ($self, $req_headers, $fn) = @_;
     my $res = HTTP::Response->new();
     if ( __file_exists($fn) ) {
+        warn("File exists at $fn, serving from local disk\n") if $self->{_debug};
         my $stat = stat($fn);
         if ($req_headers->header('If-Modified-Since') ) {
             if ( $req_headers->if_modified_since == $stat->mtime ) {
@@ -81,9 +102,11 @@ sub _serve_local {
         $res->headers->content_type($self->_mimetype($fn));
         $res->headers->content_length( $stat->size );
         $res->headers->last_modified( $stat->mtime );
-        $res->content(read_file($fn));
+        my $content = read_file($fn, binmode => ':raw');
+        $res->content($content);
     }
     else {
+        warn("File $fn does not exist on local disk\n") if $self->{_debug};
         $res->code(404);
         $res->headers->content_type('text/html');
         $res->content('<html><head><title>Not found</title></head><body><h1>Not found at ' . $fn . '</h1></body></html>');

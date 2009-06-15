@@ -1,7 +1,32 @@
+0.7 August 2008
+  - SSL traffic was being sent to port 80/http on the destination server. 
+    This has been corrected, and any traffic inside a MITM'd CONNECT method 
+    will be sent to 443 by default (or what the user specifies), and requests
+    are forced to be HTTPs. 
+
+0.6 Auguest 2008
+  - Add proxying of SSL traffic via MITM.
+
+0.5 July 2008
+  - Add an upstream_proxy flag to the configuration, which, if present, is the
+    hostname and port number of the upstream proxy server to use.
+  - Add script to pack to a .exe on Win32
+
+0.4 July 2008
+  - Add a debug flag to the configuration, which prints out match table, and
+    attempts to match in detail for user debugging.
+
 0.3 July 2008
   - Change mime type detection to just use the file extension of the file 
     being served from local disk (rather than magic). Windows doesn't have
     a magic file...
+  - Eliminate a bug when you map a specific file, local disk path was getting 
+    / appended, this is now removed.
+  - Fix a bug which sometimes caused partial content to be served.
+  - Insist on new HTTP::Headers, as we need it's ->if_modified_since method
+    to return an epochtime.
+  - Shake on a little binmode sauce, to make Windows play nicely when serving
+    binary files.
 
 0.2 July 2008
   - Fixed t/03_pod_coverage.t - I'd ripped this off from another one of my modules, and it still had references to that module,
@@ -12,4 +37,3 @@
 
 0.1 July 2008
   - Initial version
-  

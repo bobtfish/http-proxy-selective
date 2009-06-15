@@ -4,12 +4,15 @@ use warnings;
 use inc::Module::Install;
 
 all_from 'lib/HTTP/Proxy/Selective.pm';
-license 'bsd';
+
 requires 'HTTP::Proxy' => 0.22;
 requires 'File::Slurp';
-requires 'File::MimeInfo';
+requires 'File::Temp';
+requires 'IO::Socket::SSL';
+requires 'Net::SSLeay';
 requires 'Path::Class';
 requires 'Config::Tiny';
+requires 'HTTP::Headers' => '1.64'; # ->if_modified_since method.
 build_requires 'Test::MockObject';
 
 auto_install();
@@ -23,4 +26,3 @@ build_exe('selective_proxy');
 par_base        'BOBTFISH';
 
 WriteAll();
-

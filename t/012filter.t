@@ -2,7 +2,7 @@
 use strict;
 use warnings;
 use Test::MockObject;
-use Test::More tests => 13;
+use Test::More tests => 15;
 
 BEGIN { use_ok('HTTP::Proxy::Selective') or BAIL_OUT() }
 
@@ -40,7 +40,10 @@ $self->{_myfilter} = {
     ],
     'another.test.site' => [
         ['/from/here/', '/to/here/'],
-    ]
+    ],
+    'some.site' => [
+        ['/path.jpg', '/my/path.jpg'],
+    ],
 };
 
 $host = 'example.com';
@@ -64,7 +67,7 @@ $serve_local_ret = 'fnargle';
 HTTP::Proxy::Selective::filter($self, $headers, $message);
 is($path_called, 3, 'path called thrice');
 is($filter_applies_calls, 4, 'Checked 4 filters for application');
-is_deeply(\@filter_applies_args, [$self, ['/from/here/', '/to/here/'], $path], '_filter_applies called with correct args');
+is_deeply(\@filter_applies_args, [$self, ['/from/here/', '/to/here/'], $path], '_filter_applies called with correct args 2');
 if($^O =~ /WIN32/i) {	
     is_deeply(\@serve_local_args, [$self, $headers, '\to\here\stuff.jpg'], '_serve_local args as expected');
 }
@@ -73,3 +76,14 @@ else {
 }
 is($serve_local_calls, 1, '_serve_local called once');
 is($self->proxy->response, 'fnargle', 'Response from serve local pushed to proxy');
+
+$host = 'some.site';
+$path = '/path.jpg';
+HTTP::Proxy::Selective::filter($self, $headers, $message);
+is_deeply(\@filter_applies_args, [$self, ['/path.jpg', '/my/path.jpg'], $path], '_filter_applies called with correct args 3');
+if($^O =~ /WIN32/i) {	
+    is_deeply(\@serve_local_args, [$self, $headers, '\my\path.jpg'], '_serve_local args as expected');
+}
+else {
+    is_deeply(\@serve_local_args, [$self, $headers, '/my/path.jpg'], '_serve_local args as expected');
+}
