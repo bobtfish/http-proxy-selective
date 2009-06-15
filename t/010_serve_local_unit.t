@@ -23,6 +23,7 @@ $fake_stat->mock('size' => sub { $size; });
 my ($stat_fn, $file_content);
 {   no warnings 'redefine';
     *HTTP::Proxy::Selective::stat = sub ($) { $stat_fn = shift; return $fake_stat };
+    $mock_proxy->mock('_mimetype' => sub { return $mime_type });
     *HTTP::Proxy::Selective::read_file = sub { return 'file contents' };
 }
 my $file_exists = 0;
@@ -54,6 +55,7 @@ $file_exists = 1;
 $mime_type = 'text/testmimetype';
 $size = 5785673;
 {
+    no warnings 'redefine';
     my $res = HTTP::Proxy::Selective::_serve_local($mock_proxy, $mock_headers, '/some/file');
     isa_ok($res, 'HTTP::Response');
     is($res->code, 200, 'Is a 200 OK');
