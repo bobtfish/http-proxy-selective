@@ -11,7 +11,7 @@ use File::stat;
 
 use HTTP::Response;
 
-our $VERSION   = '0.002';
+our $VERSION   = '0.003';
 
 sub new {
     my ($class, $filter, $debug) = @_;
