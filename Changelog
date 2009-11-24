@@ -1,4 +1,7 @@
 
+0.004 Tue Nov 24 14:52:48 GMT 2009
+  - Newer Module::Install less broken auto_install.
+
 0.003 Wed Jun 17 12:08:33 BST 2009
   - Fix license in bundled selective_proxy script.
 
